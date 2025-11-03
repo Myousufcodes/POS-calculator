@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cash Register Shift Change Calculator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Cash Register Shift Change Calculator</h1>
+      <p class="description">
+        Enter the number of bills and coins in your register to calculate the
+        total and determine how much to remove.
+      </p>
+
+      <div class="money-inputs">
+        <!-- Coins -->
+        <div class="money-item coin-item">
+          <div class="money-label">Pennies</div>
+          <div class="money-value">$0.01 each</div>
+          <input type="number" id="pennies" min="0" value="0" />
+        </div>
+
+        <div class="money-item coin-item">
+          <div class="money-label">Nickels</div>
+          <div class="money-value">$0.05 each</div>
+          <input type="number" id="nickels" min="0" value="0" />
+        </div>
+
+        <div class="money-item coin-item">
+          <div class="money-label">Dimes</div>
+          <div class="money-value">$0.10 each</div>
+          <input type="number" id="dimes" min="0" value="0" />
+        </div>
+
+        <div class="money-item coin-item">
+          <div class="money-label">Quarters</div>
+          <div class="money-value">$0.25 each</div>
+          <input type="number" id="quarters" min="0" value="0" />
+        </div>
+
+        <!-- Bills -->
+        <div class="money-item bill-item">
+          <div class="money-label">$1 Bills</div>
+          <div class="money-value">$1.00 each</div>
+          <input type="number" id="ones" min="0" value="0" />
+        </div>
+
+        <div class="money-item bill-item">
+          <div class="money-label">$5 Bills</div>
+          <div class="money-value">$5.00 each</div>
+          <input type="number" id="fives" min="0" value="0" />
+        </div>
+
+        <div class="money-item bill-item">
+          <div class="money-label">$10 Bills</div>
+          <div class="money-value">$10.00 each</div>
+          <input type="number" id="tens" min="0" value="0" />
+        </div>
+
+        <div class="money-item bill-item">
+          <div class="money-label">$20 Bills</div>
+          <div class="money-value">$20.00 each</div>
+          <input type="number" id="twenties" min="0" value="0" />
+        </div>
+
+        <div class="money-item bill-item">
+          <div class="money-label">$50 Bills</div>
+          <div class="money-value">$50.00 each</div>
+          <input type="number" id="fifties" min="0" value="0" />
+        </div>
+
+        <div class="money-item bill-item">
+          <div class="money-label">$100 Bills</div>
+          <div class="money-value">$100.00 each</div>
+          <input type="number" id="hundreds" min="0" value="0" />
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="calculateBtn">Calculate Total</button>
+        <button id="saveBtn">Save Entry</button>
+        <button id="clearBtn">Clear All</button>
+      </div>
+
+      <div class="results" id="results" style="display: none">
+        <div class="result-item">
+          <div class="result-title">Total in Register:</div>
+          <div id="totalAmount">$0.00</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-title">Amount to Remove:</div>
+          <div id="removeAmount">$0.00</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-title">
+            Bills to Remove (from largest to smallest):
+          </div>
+          <ul class="remove-list" id="removeList"></ul>
+        </div>
+
+        <div class="highlight">
+          <div class="result-title">Amount Left in Register:</div>
+          <div id="remainingAmount">$0.00</div>
+        </div>
+      </div>
+
+      <div class="history-section">
+        <h2>Previous Entries</h2>
+        <div class="history-controls">
+          <button id="clearHistoryBtn">Clear History</button>
+          <button id="exportHistoryBtn">Export History</button>
+        </div>
+        <div class="history-list" id="historyList">
+          <!-- History entries will be displayed here -->
+        </div>
+      </div>
+
+      <div class="instructions">
+        <h3>How to Use:</h3>
+        <ol>
+          <li>Enter the number of each bill and coin in your register</li>
+          <li>Click "Calculate Total" to see the current amount</li>
+          <li>
+            The calculator will show you which BILLS to remove (starting from
+            largest) to leave $200-230 in the register
+          </li>
+          <li>
+            Click "Save Entry" to save this calculation with date and time
+          </li>
+          <li>Remove the suggested bills and drop the excess money</li>
+        </ol>
+        <p>
+          <strong>Note:</strong> Only bills are removed, coins are always kept
+          in the register.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const calculateBtn = document.getElementById("calculateBtn");
+        const saveBtn = document.getElementById("saveBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+        const exportHistoryBtn = document.getElementById("exportHistoryBtn");
+        const results = document.getElementById("results");
+        const historyList = document.getElementById("historyList");
+
+        // Values for each denomination
+        const denominations = [
+          { id: "pennies", value: 0.01, name: "Pennies", type: "coin" },
+          { id: "nickels", value: 0.05, name: "Nickels", type: "coin" },
+          { id: "dimes", value: 0.1, name: "Dimes", type: "coin" },
+          { id: "quarters", value: 0.25, name: "Quarters", type: "coin" },
+          { id: "ones", value: 1.0, name: "$1 Bills", type: "bill" },
+          { id: "fives", value: 5.0, name: "$5 Bills", type: "bill" },
+          { id: "tens", value: 10.0, name: "$10 Bills", type: "bill" },
+          { id: "twenties", value: 20.0, name: "$20 Bills", type: "bill" },
+          { id: "fifties", value: 50.0, name: "$50 Bills", type: "bill" },
+          { id: "hundreds", value: 100.0, name: "$100 Bills", type: "bill" },
+        ];
+
+        // Load history from localStorage
+        let history =
+          JSON.parse(localStorage.getItem("cashRegisterHistory")) || [];
+        renderHistory();
+
+        // Calculate total when button is clicked
+        calculateBtn.addEventListener("click", function () {
+          calculateAndDisplay();
+        });
+
+        // Save entry when button is clicked
+        saveBtn.addEventListener("click", function () {
+          saveEntry();
+        });
+
+        // Clear all inputs
+        clearBtn.addEventListener("click", function () {
+          denominations.forEach((denom) => {
+            document.getElementById(denom.id).value = "0";
+          });
+          results.style.display = "none";
+        });
+
+        // Clear history
+        clearHistoryBtn.addEventListener("click", function () {
+          if (confirm("Are you sure you want to clear all history?")) {
+            history = [];
+            localStorage.setItem(
+              "cashRegisterHistory",
+              JSON.stringify(history)
+            );
+            renderHistory();
+          }
+        });
+
+        // Export history
+        exportHistoryBtn.addEventListener("click", function () {
+          exportHistory();
+        });
+
+        function calculateAndDisplay() {
+          let total = 0;
+          let counts = {};
+
+          // Calculate total and store counts
+          denominations.forEach((denom) => {
+            const count =
+              parseInt(document.getElementById(denom.id).value) || 0;
+            counts[denom.id] = count;
+            total += count * denom.value;
+          });
+
+          // Display total
+          document.getElementById("totalAmount").textContent =
+            "$" + total.toFixed(2);
+
+          // Calculate amount to remove (anything over $215 to leave around $200-230)
+          const targetAmount = 215; // Aim for $215 to have a buffer
+          let amountToRemove = Math.max(0, total - targetAmount);
+
+          // If total is less than 200, no need to remove anything
+          if (total <= 200) {
+            amountToRemove = 0;
+            document.getElementById("removeAmount").textContent = "$0.00";
+            document.getElementById("removeList").innerHTML =
+              "<li>No money needs to be removed</li>";
+            document.getElementById("remainingAmount").textContent =
+              "$" + total.toFixed(2);
+          } else {
+            document.getElementById("removeAmount").textContent =
+              "$" + amountToRemove.toFixed(2);
+
+            // Calculate which bills to remove (ONLY BILLS, from largest to smallest)
+            const removeList = calculateBillRemoval(amountToRemove, counts);
+            document.getElementById("removeList").innerHTML = "";
+
+            if (removeList.length === 0) {
+              document.getElementById("removeList").innerHTML =
+                "<li>No bills need to be removed</li>";
+            } else {
+              removeList.forEach((item) => {
+                const li = document.createElement("li");
+                li.textContent = `${item.count} ${item.name} ($${(
+                  item.count * item.value
+                ).toFixed(2)})`;
+                document.getElementById("removeList").appendChild(li);
+              });
+            }
+
+            // Calculate remaining amount
+            const remainingAmount = total - amountToRemove;
+            document.getElementById("remainingAmount").textContent =
+              "$" + remainingAmount.toFixed(2);
+          }
+
+          // Show results
+          results.style.display = "block";
+
+          return {
+            total: total,
+            amountToRemove: amountToRemove,
+            remainingAmount: remainingAmount,
+            counts: counts,
+            removeList: removeList,
+          };
+        }
+
+        function saveEntry() {
+          const calculation = calculateAndDisplay();
+
+          // Create history entry
+          const entry = {
+            id: Date.now(),
+            date: new Date().toLocaleString(),
+            timestamp: new Date().toISOString(),
+            total: calculation.total,
+            amountToRemove: calculation.amountToRemove,
+            remainingAmount: calculation.remainingAmount,
+            counts: calculation.counts,
+            removeList: calculation.removeList,
+          };
+
+          // Add to history and save
+          history.unshift(entry);
+          localStorage.setItem("cashRegisterHistory", JSON.stringify(history));
+
+          // Update history display
+          renderHistory();
+
+          // Show confirmation
+          alert("Entry saved successfully!");
+        }
+
+        function renderHistory() {
+          historyList.innerHTML = "";
+
+          if (history.length === 0) {
+            historyList.innerHTML = "<p>No previous entries found.</p>";
+            return;
+          }
+
+          history.forEach((entry) => {
+            const entryElement = document.createElement("div");
+            entryElement.className = "history-entry";
+
+            entryElement.innerHTML = `
+                        <div class="history-entry-header">
+                            <div class="history-date">${entry.date}</div>
+                            <div class="history-total">Total: $${entry.total.toFixed(
+                              2
+                            )}</div>
+                        </div>
+                        <div class="history-details">
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Amount to Remove:</span>
+                                <span class="history-detail-value">$${entry.amountToRemove.toFixed(
+                                  2
+                                )}</span>
+                            </div>
+                            <div class="history-detail-item">
+                                <span class="history-detail-label">Remaining Amount:</span>
+                                <span class="history-detail-value">$${entry.remainingAmount.toFixed(
+                                  2
+                                )}</span>
+                            </div>
+                            <div class="history-detail-item" style="grid-column: 1 / -1;">
+                                <span class="history-detail-label">Bills to Remove:</span>
+                                <span class="history-detail-value">${
+                                  entry.removeList.length > 0
+                                    ? entry.removeList
+                                        .map(
+                                          (item) => `${item.count} ${item.name}`
+                                        )
+                                        .join(", ")
+                                    : "None"
+                                }</span>
+                            </div>
+                        </div>
+                    `;
+
+            historyList.appendChild(entryElement);
+          });
+        }
+
+        function exportHistory() {
+          if (history.length === 0) {
+            alert("No history to export.");
+            return;
+          }
+
+          // Convert history to CSV
+          let csv =
+            "Date,Total,Amount to Remove,Remaining Amount,Bills to Remove\n";
+
+          history.forEach((entry) => {
+            const billsToRemove =
+              entry.removeList.length > 0
+                ? entry.removeList
+                    .map((item) => `${item.count} ${item.name}`)
+                    .join("; ")
+                : "None";
+
+            csv += `"${entry.date}",$${entry.total.toFixed(
+              2
+            )},$${entry.amountToRemove.toFixed(
+              2
+            )},$${entry.remainingAmount.toFixed(2)},"${billsToRemove}"\n`;
+          });
+
+          // Create download link
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `cash_register_history_${
+            new Date().toISOString().split("T")[0]
+          }.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }
+
+        // Function to calculate which BILLS to remove (from largest to smallest)
+        function calculateBillRemoval(amountToRemove, counts) {
+          let removeList = [];
+          let remainingToRemove = amountToRemove;
+
+          // Get only bills (no coins) and sort from highest to lowest value
+          const billDenominations = denominations.filter(
+            (denom) => denom.type === "bill"
+          );
+          const sortedBills = [...billDenominations].sort(
+            (a, b) => b.value - a.value
+          );
+
+          // Try to remove larger bills first
+          for (let bill of sortedBills) {
+            if (remainingToRemove <= 0) break;
+
+            const countAvailable = counts[bill.id];
+            if (countAvailable > 0) {
+              // Calculate how many of this bill we can remove
+              const maxToRemove = Math.min(
+                countAvailable,
+                Math.floor(remainingToRemove / bill.value)
+              );
+
+              if (maxToRemove > 0) {
+                removeList.push({
+                  name: bill.name,
+                  count: maxToRemove,
+                  value: bill.value,
+                });
+
+                remainingToRemove -= bill.value * maxToRemove;
+                // Adjust for floating point precision
+                remainingToRemove = Math.round(remainingToRemove * 100) / 100;
+              }
+            }
+          }
+
+          return removeList;
+        }
+      });
+    </script>
+  </body>
+</html>
